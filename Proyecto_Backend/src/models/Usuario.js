@@ -1,0 +1,48 @@
+const mongoose = require('mongoose');
+
+const UsuarioSchema = new mongoose.Schema(
+  {
+    nombre: {
+      type: String,
+      required: [true, 'El nombre es obligatorio'],
+      trim: true
+    },
+    email: {
+      type: String,
+      required: [true, 'El email es obligatorio'],
+      unique: true,
+      lowercase: true
+    },
+    password: {
+      type: String,
+      required: [true, 'La contraseña es obligatoria']
+    },
+    rol: {
+      type: String,
+      enum: ['admin', 'user'],
+      default: 'user'
+    },
+
+    Token: 
+    {
+    type: String,
+    default: null
+    },
+
+    refreshToken: 
+    {
+    type: String,
+    default: null
+    },
+    
+    activo: {
+      type: Boolean,
+      default: true
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+module.exports = mongoose.model('Usuario', UsuarioSchema);
