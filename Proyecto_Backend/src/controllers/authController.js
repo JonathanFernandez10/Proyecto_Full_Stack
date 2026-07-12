@@ -1,11 +1,35 @@
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-// LOGIN 
+
+const firmarAccessToken = (usuario) => jwt.sign(
+    {
+        uid: usuario._id,
+        nombre: usuario.nombre,
+        rol: usuario.rol,
+        proveedorId: usuario.proveedor || null
+    },
+    process.env.JWT_SECRET,
+    {
+        expiresIn: '15m'
+    }
+);
+
+const firmarRefreshToken = (usuario) => jwt.sign(
+    {
+        uid: usuario._id
+    },
+    process.env.REFRESH_SECRET,
+    {
+        expiresIn: '7d'
+    }
+);
+
+// LOGIN
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        // 1.  Buscar usuario    
+        // 1.  Buscar usuario
         const usuario = await Usuario.findOne({ email });
         if (!usuario) {
             return res.status(400).json({
@@ -13,7 +37,16 @@ const login = async (req, res) => {
                 mensaje: 'Usuario no existe'     // más adelante por seguridad  un mensaje genérico por seguridad
             });
         }
-        // 2.  Validar contraseña     
+
+        // 2. Verificar estado de la cuenta
+        if (usuario.estado !== 'activo') {
+            return res.status(403).json({
+                ok: false,
+                mensaje: 'La cuenta está inactiva. Contacta a un administrador.'
+            });
+        }
+
+        // 3.  Validar contraseña
         const passwordValido = bcrypt.compareSync(
             password,
             usuario.password
@@ -24,35 +57,21 @@ const login = async (req, res) => {
                 mensaje: 'Password incorrecto'
             });
         }
-        // 3.  Generar TOKEN     
-        const token = jwt.sign(
-            { 
-                uid: usuario._id, 
-                nombre: usuario.nombre 
-            },
-            process.env.JWT_SECRET,
-            { 
-                expiresIn: '15m' 
-            }
-        );
+        // 4.  Generar TOKEN
+        const token = firmarAccessToken(usuario);
+        const refreshToken = firmarRefreshToken(usuario);
 
-        const refreshToken = jwt.sign(
-    {
-        uid: usuario._id
-    },
-    process.env.REFRESH_SECRET,
-    {
-        expiresIn: '7d'
-    }
-    ); 
-    usuario.Token = token;
-    usuario.refreshToken = refreshToken;
-    await usuario.save();
+        usuario.Token = token;
+        usuario.refreshToken = refreshToken;
+        await usuario.save();
 
-        // 4.  Respuesta     
+        // 5.  Respuesta (sin exponer el hash de la contraseña)
+        const usuarioSeguro = usuario.toObject();
+        delete usuarioSeguro.password;
+
         res.json({
             ok: true,
-            usuario,
+            usuario: usuarioSeguro,
             token,
             refreshToken
         });
@@ -105,18 +124,15 @@ const refreshToken = async (req, res) => {
             });
         }
 
+        if (usuario.estado !== 'activo') {
+            return res.status(403).json({
+                ok: false,
+                mensaje: 'La cuenta está inactiva'
+            });
+        }
+
         // PASO 4: Generar nuevo Access Token
-        const nuevoAccessToken = jwt.sign(
-            {
-                uid: usuario._id,
-                nombre: usuario.nombre,
-                rol: usuario.rol
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: '15m'
-            }
-        );
+        const nuevoAccessToken = firmarAccessToken(usuario);
         usuario.Token = nuevoAccessToken;
         await usuario.save();
 
@@ -178,4 +194,4 @@ module.exports = {
     login,
     refreshToken,
     logout
-};  
+};

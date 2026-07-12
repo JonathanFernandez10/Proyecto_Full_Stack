@@ -2,7 +2,7 @@ const express = require('express');
 
 const router = express.Router();
 
-const verificarToken = require('../middleware/middleware');
+const { verificarToken, verificarRol } = require('../middleware/middleware');
 
 const {
     crearProducto,
@@ -12,14 +12,13 @@ const {
     eliminarProducto
 } = require('../controllers/productoController');
 
-router.post('/', verificarToken, crearProducto);
+router.use(verificarToken);
 
-router.get('/', verificarToken, getProductos);
+router.get('/', verificarRol('admin', 'user', 'guest'), getProductos);
+router.get('/:id', verificarRol('admin', 'user', 'guest'), getProductoById);
 
-router.get('/:id', verificarToken, getProductoById);
-
-router.put('/:id', verificarToken, actualizarProducto);
-
-router.delete('/:id', verificarToken, eliminarProducto);
+router.post('/', verificarRol('admin', 'user'), crearProducto);
+router.put('/:id', verificarRol('admin', 'user'), actualizarProducto);
+router.delete('/:id', verificarRol('admin', 'user'), eliminarProducto);
 
 module.exports = router;

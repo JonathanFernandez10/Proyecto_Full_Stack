@@ -19,25 +19,32 @@ const UsuarioSchema = new mongoose.Schema(
     },
     rol: {
       type: String,
-      enum: ['admin', 'user'],
+      enum: ['admin', 'user', 'guest', 'proveedor'],
       default: 'user'
     },
 
-    Token: 
+    Token:
     {
     type: String,
     default: null
     },
 
-    refreshToken: 
+    refreshToken:
     {
     type: String,
     default: null
     },
-    
-    activo: {
-      type: Boolean,
-      default: true
+
+    estado: {
+      type: String,
+      enum: ['activo', 'inactivo'],
+      default: 'activo'
+    },
+
+    proveedor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Proveedor',
+      default: null
     }
   },
   {

@@ -4,25 +4,35 @@ const bcrypt = require('bcryptjs');
 // Crear nuevo usuario
 const crearUsuario = async (req, res) => {
   try {
-    const { nombre, email, password, rol } = req.body;
+    const { nombre, email, password, rol, estado, proveedor } = req.body;
 
-    // Encriptar contraseña 
-    const salt = bcrypt.genSaltSync(10); 
+    if (rol === 'proveedor' && !proveedor) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'Un usuario con rol proveedor debe estar vinculado a un proveedor'
+      });
+    }
+
+    // Encriptar contraseña
+    const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(password, salt);
 
     const nuevoUsuario = new Usuario({
       nombre,
       email,
       password: passwordHash,
-      rol
+      rol,
+      estado,
+      proveedor: rol === 'proveedor' ? proveedor : null
     });
 
     const usuarioGuardado = await nuevoUsuario.save();
-    usuarioGuardado.password = undefined;
+    const usuarioSeguro = usuarioGuardado.toObject();
+    delete usuarioSeguro.password;
 
     res.status(201).json({
       ok: true,
-      usuario: usuarioGuardado
+      usuario: usuarioSeguro
     });
 
   } catch (error) {
@@ -41,15 +51,17 @@ const crearUsuario = async (req, res) => {
 */
 const getUsers = async (req, res) => {
     try {
-        const users = await Usuario.find();
+        const users = await Usuario.find()
+            .select('-password')
+            .populate('proveedor', 'nombre');
         res.status(200).json({
-            success: true,
-            data: users
+            ok: true,
+            usuarios: users
         });
     } catch (error) {
         res.status(500).json({
-            success: false,
-            message: 'Error obteniendo usuarios',
+            ok: false,
+            mensaje: 'Error obteniendo usuarios',
             error: error.message
         });
     }
@@ -60,29 +72,100 @@ const getUsers = async (req, res) => {
 */
 const getUserById = async (req, res) => {
     try {
-        const user = await Usuario.findById(req.params.id);
+        const user = await Usuario.findById(req.params.id)
+            .select('-password')
+            .populate('proveedor', 'nombre');
         if (!user) {
             return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
+                ok: false,
+                mensaje: 'Usuario no encontrado'
             });
         }
         res.status(200).json({
-            success: true,
-            data: user
+            ok: true,
+            usuario: user
         });
     } catch (error) {
         res.status(500).json({
-            success: false,
-            message: 'Error obteniendo usuario',
+            ok: false,
+            mensaje: 'Error obteniendo usuario',
             error: error.message
         });
     }
 };
- 
+
+/*
+    Actualizar usuario
+*/
+const actualizarUsuario = async (req, res) => {
+    try {
+        const { nombre, email, password, rol, estado, proveedor } = req.body;
+
+        const cambios = { nombre, email, rol, estado, proveedor: rol === 'proveedor' ? proveedor : null };
+
+        if (password) {
+            const salt = bcrypt.genSaltSync(10);
+            cambios.password = bcrypt.hashSync(password, salt);
+        }
+
+        const usuario = await Usuario.findByIdAndUpdate(
+            req.params.id,
+            cambios,
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!usuario) {
+            return res.status(404).json({
+                ok: false,
+                mensaje: 'Usuario no encontrado'
+            });
+        }
+
+        res.status(200).json({
+            ok: true,
+            usuario
+        });
+    } catch (error) {
+        res.status(400).json({
+            ok: false,
+            mensaje: 'Error actualizando usuario',
+            error: error.message
+        });
+    }
+};
+
+/*
+    Eliminar usuario
+*/
+const eliminarUsuario = async (req, res) => {
+    try {
+        const usuario = await Usuario.findByIdAndDelete(req.params.id);
+
+        if (!usuario) {
+            return res.status(404).json({
+                ok: false,
+                mensaje: 'Usuario no encontrado'
+            });
+        }
+
+        res.status(200).json({
+            ok: true,
+            mensaje: 'Usuario eliminado'
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            mensaje: 'Error eliminando usuario',
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
   crearUsuario,
   getUsers,
-  getUserById
+  getUserById,
+  actualizarUsuario,
+  eliminarUsuario
 };
