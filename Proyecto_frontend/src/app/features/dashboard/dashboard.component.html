@@ -1,1 +1,73 @@
-<p>dashboard works!</p>
+<div class="dashboard">
+    <header class="dashboard__header">
+        <h1>Productos</h1>
+        <button type="button" class="btn btn--ghost" (click)="logout()">Cerrar sesión</button>
+    </header>
+
+    <p class="dashboard__error" *ngIf="error">{{ error }}</p>
+
+    <form class="producto-form" [formGroup]="productoForm" (ngSubmit)="onSubmit()">
+        <div class="field">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" type="text" formControlName="nombre">
+        </div>
+
+        <div class="field">
+            <label for="codigo_sku">SKU (AAA-1234)</label>
+            <input id="codigo_sku" type="text" formControlName="codigo_sku" placeholder="ABC-1234">
+        </div>
+
+        <div class="field">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" formControlName="categoria">
+                <option value="" disabled>Selecciona una categoría</option>
+                <option *ngFor="let c of categorias" [value]="c">{{ c }}</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="precio">Precio</label>
+            <input id="precio" type="number" formControlName="precio" min="0" step="0.01">
+        </div>
+
+        <div class="field">
+            <label for="stock">Stock</label>
+            <input id="stock" type="number" formControlName="stock" min="0">
+        </div>
+
+        <div class="producto-form__actions">
+            <button type="submit" class="btn">{{ editingId ? 'Guardar cambios' : 'Agregar producto' }}</button>
+            <button type="button" class="btn btn--ghost" *ngIf="editingId" (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+    </form>
+
+    <p *ngIf="cargando">Cargando productos...</p>
+
+    <table class="tabla" *ngIf="!cargando && productos.length">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>SKU</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let producto of productos">
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.codigo_sku }}</td>
+                <td>{{ producto.categoria }}</td>
+                <td>{{ producto.precio | number:'1.2-2' }}</td>
+                <td>{{ producto.stock }}</td>
+                <td class="tabla__acciones">
+                    <button type="button" class="btn btn--small" (click)="onEdit(producto)">Editar</button>
+                    <button type="button" class="btn btn--small btn--danger" (click)="onDelete(producto)">Eliminar</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p *ngIf="!cargando && !productos.length">No hay productos todavía.</p>
+</div>
