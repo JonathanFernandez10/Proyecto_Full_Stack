@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { LandingComponent } from './features/landing/landing.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { ProductosComponent } from './features/productos/productos.component';
@@ -15,7 +16,7 @@ import { roleGuard } from './core/guards/role.guard';
 export const routes: Routes = [
     {
         path: '',
-        redirectTo: 'login',
+        component: LandingComponent,
         pathMatch: 'full'
     },
     {
@@ -40,6 +41,6 @@ export const routes: Routes = [
     },
     {
         path: '**',
-        redirectTo: 'login'
+        redirectTo: ''
     }
 ];

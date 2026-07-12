@@ -11,14 +11,15 @@ import {
 import { AuthService }
     from '../../../core/services/auth.service';
 
-import { Router }
+import { Router, RouterLink }
 from '@angular/router';
 
 @Component({
     selector: 'app-login',
     imports: [
         CommonModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        RouterLink
     ],
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
