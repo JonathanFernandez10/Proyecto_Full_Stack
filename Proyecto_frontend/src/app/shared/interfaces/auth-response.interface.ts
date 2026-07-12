@@ -1,11 +1,13 @@
+import { Usuario } from './usuario.interface';
+
 export interface AuthResponse {
- success: boolean;
- accessToken: string;
- refreshToken: string;
- user: {
- id: string;
- name: string;
- email: string;
- role: string;
- };
-} 
+    ok: boolean;
+    usuario: Usuario;
+    token: string;
+    refreshToken: string;
+}
+
+export interface RefreshResponse {
+    ok: boolean;
+    accessToken: string;
+}

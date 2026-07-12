@@ -8,9 +8,9 @@ const ProductoSchema = new mongoose.Schema({
         trim: true
     },
 
-    codigo_sku: {
+    codigo: {
         type: String,
-        required: [true, 'El SKU es obligatorio'],
+        required: [true, 'El código es obligatorio'],
         unique: true,
 
         validate: {
@@ -23,15 +23,22 @@ const ProductoSchema = new mongoose.Schema({
         }
     },
 
-    categoria: {
+    descripcion: {
         type: String,
+        trim: true,
+        default: ''
+    },
 
-        enum: {
-            values: ['Electrónica', 'Hogar', 'Oficina'],
-            message: '{VALUE} no es una categoría válida'
-        },
+    categoria: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Categoria',
+        required: [true, 'La categoría es obligatoria']
+    },
 
-        required: true
+    proveedor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Proveedor',
+        required: [true, 'El proveedor es obligatorio']
     },
 
     precio: {
@@ -40,6 +47,7 @@ const ProductoSchema = new mongoose.Schema({
         min: [0, 'El precio no puede ser negativo']
     },
 
+    // Stock mínimo / punto de reorden. La cantidad real disponible vive en Inventario.
     stock: {
         type: Number,
         default: 0,

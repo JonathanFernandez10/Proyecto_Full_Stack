@@ -1,114 +1,77 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from
-'../../../environments/environment';
-import { AuthResponse }
-from '../../shared/interfaces/auth-response.interface';
+import { environment } from '../../../environments/environment';
+import { AuthResponse, RefreshResponse } from '../../shared/interfaces/auth-response.interface';
+import { Rol, Usuario } from '../../shared/interfaces/usuario.interface';
+
 @Injectable({
- providedIn: 'root'
+    providedIn: 'root'
 })
 export class AuthService {
- private apiUrl = environment.apiUrl;
- constructor(
- private http: HttpClient
- ) { }
- /*
- Login
- */
- login(
- email: string,
- password: string
- ): Observable<AuthResponse> {
- return this.http.post<AuthResponse>(
- `${this.apiUrl}/auth/login`,
- {
- email,
- password
- }
- );
- }
+    private apiUrl = environment.apiUrl;
 
- saveSession(response: any): void { 
- localStorage.setItem( 
- 'accessToken', 
- response.token 
- ); 
- localStorage.setItem( 
- 'refreshToken', 
- response.refreshToken 
- ); 
- localStorage.setItem( 
- 'user', 
- JSON.stringify(response.usuario) 
- ); 
-}
+    constructor(private http: HttpClient) { }
 
-getAccessToken(): string | null { 
- return localStorage.getItem( 
- 'accessToken' 
- ); 
-} 
+    login(email: string, password: string): Observable<AuthResponse> {
+        return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, { email, password });
+    }
 
-getUser(): any { 
- const user = 
- localStorage.getItem('user'); 
- return user 
- ? JSON.parse(user) 
- : null; 
-}
+    saveSession(response: AuthResponse): void {
+        localStorage.setItem('accessToken', response.token);
+        localStorage.setItem('refreshToken', response.refreshToken);
+        localStorage.setItem('user', JSON.stringify(response.usuario));
+    }
 
-logout(): void { 
- localStorage.removeItem( 
- 'accessToken' 
- ); 
- localStorage.removeItem( 
- 'refreshToken' 
- ); 
- localStorage.removeItem( 
- 'user' 
- ); 
-} 
+    getAccessToken(): string | null {
+        return localStorage.getItem('accessToken');
+    }
 
-/* 
- Verificar si existe una sesión activa 
-*/ 
-isAuthenticated(): boolean { 
- return this.getAccessToken() !== null; 
-} 
+    getUser(): Usuario | null {
+        const user = localStorage.getItem('user');
+        return user ? JSON.parse(user) : null;
+    }
 
-/* 
- Actualizar únicamente el Access Token 
-*/ 
-updateAccessToken( 
- accessToken: string 
-): void { 
- localStorage.setItem( 
- 'accessToken', 
- accessToken 
- ); 
-}
+    logout(): void {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+    }
 
-/* 
- Obtener Refresh Token 
-*/ 
-getRefreshToken(): string | null { 
- return localStorage.getItem( 
- 'refreshToken' 
- ); 
-} 
+    isAuthenticated(): boolean {
+        return this.getAccessToken() !== null;
+    }
 
-/* 
- Solicitar un nuevo Access Token 
-*/ 
-refreshAccessToken() { 
- return this.http.post( 
- `${this.apiUrl}/auth/refresh-token`, 
- { 
- refreshToken: 
- this.getRefreshToken() 
- } 
- ); 
-}
+    hasRole(...roles: Rol[]): boolean {
+        const user = this.getUser();
+        return !!user && roles.includes(user.rol);
+    }
 
+    getRefreshToken(): string | null {
+        return localStorage.getItem('refreshToken');
+    }
+
+    refreshAccessToken(): Observable<RefreshResponse> {
+        return this.http.post<RefreshResponse>(`${this.apiUrl}/auth/refresh-token`, {
+            refreshToken: this.getRefreshToken()
+        });
+    }
+
+    updateAccessToken(accessToken: string): void {
+        localStorage.setItem('accessToken', accessToken);
+    }
+
+    /*
+        Ruta de aterrizaje por defecto tras el login, según el rol del usuario.
+    */
+    landingRouteForRole(rol: Rol): string {
+        switch (rol) {
+            case 'guest':
+                return '/productos';
+            case 'proveedor':
+                return '/mis-ordenes';
+            default:
+                return '/dashboard';
+        }
+    }
 }

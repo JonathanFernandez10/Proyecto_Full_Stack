@@ -1,15 +1,38 @@
+const mongoose = require('mongoose');
 const Producto = require('../models/Producto');
+const Inventario = require('../models/Inventario');
+const Movimiento = require('../models/Movimiento');
+const OrdenCompra = require('../models/OrdenCompra');
+
+const POPULATE = [
+    { path: 'categoria', select: 'nombre' },
+    { path: 'proveedor', select: 'nombre' }
+];
 
 /*
-    Crear producto
+    Crear producto. Crea automáticamente su registro de Inventario asociado.
 */
 const crearProducto = async (req, res) => {
 
+    const session = await mongoose.startSession();
+
     try {
+        const { cantidadInicial, ubicacion, ...datosProducto } = req.body;
 
-        const producto = new Producto(req.body);
+        let productoGuardado;
 
-        const productoGuardado = await producto.save();
+        await session.withTransaction(async () => {
+            const producto = new Producto(datosProducto);
+            productoGuardado = await producto.save({ session });
+
+            await Inventario.create([{
+                producto: productoGuardado._id,
+                cantidadDisponible: cantidadInicial || 0,
+                ubicacion: ubicacion || 'Bodega Principal'
+            }], { session });
+        });
+
+        await productoGuardado.populate(POPULATE);
 
         res.status(201).json({
             ok: true,
@@ -24,6 +47,8 @@ const crearProducto = async (req, res) => {
             error: error.message
         });
 
+    } finally {
+        session.endSession();
     }
 
 };
@@ -35,7 +60,7 @@ const getProductos = async (req, res) => {
 
     try {
 
-        const productos = await Producto.find();
+        const productos = await Producto.find().populate(POPULATE).sort({ nombre: 1 });
 
         res.status(200).json({
             ok: true,
@@ -60,7 +85,7 @@ const getProductoById = async (req, res) => {
 
     try {
 
-        const producto = await Producto.findById(req.params.id);
+        const producto = await Producto.findById(req.params.id).populate(POPULATE);
 
         if (!producto) {
 
@@ -93,7 +118,7 @@ const getProductoById = async (req, res) => {
 const actualizarProducto = async (req, res) => {
 
     try {
-        
+
         const producto = await Producto.findByIdAndUpdate(
             req.params.id,
             req.body,
@@ -101,7 +126,7 @@ const actualizarProducto = async (req, res) => {
                 new: true,
                 runValidators: true
             }
-        );
+        ).populate(POPULATE);
 
         if (!producto) {
 
@@ -130,15 +155,38 @@ const actualizarProducto = async (req, res) => {
 };
 
 /*
-    Eliminar producto
+    Eliminar producto. Bloqueado si tiene historial de movimientos u órdenes de compra.
+    Si no, elimina en cascada su registro de Inventario.
 */
 const eliminarProducto = async (req, res) => {
 
+    const session = await mongoose.startSession();
+
     try {
 
-        const producto = await Producto.findByIdAndDelete(req.params.id);
+        const [tieneMovimientos, tieneOrdenes] = await Promise.all([
+            Movimiento.exists({ producto: req.params.id }),
+            OrdenCompra.exists({ producto: req.params.id })
+        ]);
 
-        if (!producto) {
+        if (tieneMovimientos || tieneOrdenes) {
+            return res.status(409).json({
+                ok: false,
+                mensaje: 'No se puede eliminar: el producto tiene movimientos u órdenes de compra asociadas'
+            });
+        }
+
+        let productoEliminado;
+
+        await session.withTransaction(async () => {
+            productoEliminado = await Producto.findByIdAndDelete(req.params.id).session(session);
+
+            if (productoEliminado) {
+                await Inventario.deleteOne({ producto: req.params.id }).session(session);
+            }
+        });
+
+        if (!productoEliminado) {
 
             return res.status(404).json({
                 ok: false,
@@ -159,6 +207,8 @@ const eliminarProducto = async (req, res) => {
             mensaje: error.message
         });
 
+    } finally {
+        session.endSession();
     }
 
 };

@@ -3,19 +3,23 @@ import {
   HttpInterceptorFn,
   HttpErrorResponse
 } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 import { AuthService } from '../services/auth.service';
+import { RefreshResponse } from '../../shared/interfaces/auth-response.interface';
 
 import {
   catchError,
   throwError,
-  switchMap,
-  tap
+  switchMap
 } from 'rxjs';
+
+const esRutaDeAuth = (url: string) => url.includes('/auth/login') || url.includes('/auth/refresh-token');
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const authService = inject(AuthService);
+  const router = inject(Router);
 
   const token = authService.getAccessToken();
 
@@ -30,12 +34,33 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      if (error.status === 401) {
-        console.log('Interceptor detectó un 401 Unauthorized');
+      if (error.status === 401 && !esRutaDeAuth(req.url) && authService.getRefreshToken()) {
+        return authService.refreshAccessToken().pipe(
+          switchMap((res: RefreshResponse) => {
+            authService.updateAccessToken(res.accessToken);
+
+            const reintento = req.clone({
+              setHeaders: {
+                Authorization: `Bearer ${res.accessToken}`
+              }
+            });
+
+            return next(reintento);
+          }),
+          catchError((refreshError) => {
+            authService.logout();
+            router.navigate(['/login']);
+            return throwError(() => refreshError);
+          })
+        );
+      }
+
+      if (error.status === 401 && !esRutaDeAuth(req.url)) {
+        authService.logout();
+        router.navigate(['/login']);
       }
 
       return throwError(() => error);
-
     })
   );
 

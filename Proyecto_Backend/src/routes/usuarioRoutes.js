@@ -1,20 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const verificarToken = require('../middleware/middleware');
+const { verificarToken, verificarRol } = require('../middleware/middleware');
 
 const{
   crearUsuario,
   getUsers,
-  getUserById
+  getUserById,
+  actualizarUsuario,
+  eliminarUsuario
 } = require('../controllers/usuarioController');
+
+router.use(verificarToken, verificarRol('admin'));
 
 // POST
 router.post('/', crearUsuario);
 
 // GET TODOS
-router.get('/', verificarToken, getUsers);
+router.get('/', getUsers);
 
 // GET POR ID
-router.get('/:id', verificarToken, getUserById);
+router.get('/:id', getUserById);
+
+// PUT
+router.put('/:id', actualizarUsuario);
+
+// DELETE
+router.delete('/:id', eliminarUsuario);
 
 module.exports = router;
