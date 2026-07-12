@@ -23,3 +23,8 @@ dist/
 
 # Cobertura de pruebas
 coverage/
+
+# Documentación y archivos locales de trabajo
+docs/
+.claude/
+CLAUDE.md
