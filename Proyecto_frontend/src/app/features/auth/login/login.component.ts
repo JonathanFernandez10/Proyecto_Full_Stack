@@ -14,12 +14,16 @@ import { AuthService }
 import { Router, RouterLink }
 from '@angular/router';
 
+import { LogoComponent }
+    from '../../../shared/components/logo/logo.component';
+
 @Component({
     selector: 'app-login',
     imports: [
         CommonModule,
         ReactiveFormsModule,
-        RouterLink
+        RouterLink,
+        LogoComponent
     ],
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
