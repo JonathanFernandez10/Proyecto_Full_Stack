@@ -9,7 +9,7 @@
         <button
             *ngIf="puedeGestionar"
             (click)="abrirNuevo()"
-            class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
+            class="bg-accent-400 hover:bg-accent-500 text-brand-950 text-sm font-semibold rounded-lg px-4 py-2.5 transition-colors"
         >
             + Nueva orden
         </button>
@@ -51,8 +51,8 @@
                             class="text-xs font-medium rounded-full px-2.5 py-1"
                             [class.bg-slate-100]="orden.estado === 'pendiente'"
                             [class.text-slate-700]="orden.estado === 'pendiente'"
-                            [class.bg-blue-100]="orden.estado === 'aprobada'"
-                            [class.text-blue-700]="orden.estado === 'aprobada'"
+                            [class.bg-brand-100]="orden.estado === 'aprobada'"
+                            [class.text-brand-700]="orden.estado === 'aprobada'"
                             [class.bg-emerald-100]="orden.estado === 'recibida'"
                             [class.text-emerald-700]="orden.estado === 'recibida'"
                             [class.bg-red-100]="orden.estado === 'cancelada'"
@@ -64,7 +64,7 @@
                             <button
                                 *ngIf="orden.estado === 'pendiente'"
                                 (click)="cambiarEstado(orden, 'aprobada')"
-                                class="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                class="text-brand-600 hover:text-brand-800 text-xs font-medium"
                             >Aprobar</button>
                             <button
                                 *ngIf="orden.estado !== 'recibida' && orden.estado !== 'cancelada'"
