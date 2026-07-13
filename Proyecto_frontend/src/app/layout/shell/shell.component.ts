@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 
 import { AuthService } from '../../core/services/auth.service';
 import { Rol } from '../../shared/interfaces/usuario.interface';
+import { LogoComponent } from '../../shared/components/logo/logo.component';
 
 interface NavItem {
     label: string;
@@ -26,7 +27,7 @@ const NAV_ITEMS: NavItem[] = [
 
 @Component({
     selector: 'app-shell',
-    imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+    imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, LogoComponent],
     templateUrl: './shell.component.html',
     styleUrl: './shell.component.css'
 })
