@@ -61,7 +61,6 @@ const login = async (req, res) => {
         const token = firmarAccessToken(usuario);
         const refreshToken = firmarRefreshToken(usuario);
 
-        usuario.Token = token;
         usuario.refreshToken = refreshToken;
         await usuario.save();
 
@@ -133,9 +132,6 @@ const refreshToken = async (req, res) => {
 
         // PASO 4: Generar nuevo Access Token
         const nuevoAccessToken = firmarAccessToken(usuario);
-        usuario.Token = nuevoAccessToken;
-        await usuario.save();
-
 
         // PASO 5: Responder
         res.json({
