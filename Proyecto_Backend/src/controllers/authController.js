@@ -32,9 +32,10 @@ const login = async (req, res) => {
         // 1.  Buscar usuario
         const usuario = await Usuario.findOne({ email });
         if (!usuario) {
+            // Mensaje genérico para no revelar si el correo existe (evita enumeración de usuarios).
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Usuario no existe'     // más adelante por seguridad  un mensaje genérico por seguridad
+                mensaje: 'Usuario o contraseña inválidos'
             });
         }
 
@@ -52,9 +53,10 @@ const login = async (req, res) => {
             usuario.password
         );
         if (!passwordValido) {
+            // Mismo mensaje genérico que "usuario no existe" para no distinguir ambos casos.
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Password incorrecto'
+                mensaje: 'Usuario o contraseña inválidos'
             });
         }
         // 4.  Generar TOKEN
