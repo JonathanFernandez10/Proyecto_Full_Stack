@@ -28,11 +28,26 @@ export class AuthService {
     }
 
     getUser(): Usuario | null {
-        const user = localStorage.getItem('user');
-        return user ? JSON.parse(user) : null;
+        try {
+            const user = localStorage.getItem('user');
+            return user ? JSON.parse(user) : null;
+        } catch {
+            return null;
+        }
     }
 
+    /*
+        Cierra la sesión: notifica al backend (que invalida el refresh token
+        almacenado) y limpia el estado local. El error del POST se ignora:
+        la sesión local se cierra de todas formas.
+    */
     logout(): void {
+        if (this.getAccessToken()) {
+            this.http.post(`${this.apiUrl}/auth/logout`, {}).subscribe({
+                next: () => { },
+                error: () => { }
+            });
+        }
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');

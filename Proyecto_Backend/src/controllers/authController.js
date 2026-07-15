@@ -39,15 +39,7 @@ const login = async (req, res) => {
             });
         }
 
-        // 2. Verificar estado de la cuenta
-        if (usuario.estado !== 'activo') {
-            return res.status(403).json({
-                ok: false,
-                mensaje: 'La cuenta está inactiva. Contacta a un administrador.'
-            });
-        }
-
-        // 3.  Validar contraseña
+        // 2.  Validar contraseña
         const passwordValido = bcrypt.compareSync(
             password,
             usuario.password
@@ -59,6 +51,15 @@ const login = async (req, res) => {
                 mensaje: 'Usuario o contraseña inválidos'
             });
         }
+
+        // 3. Verificar estado de la cuenta (después del password para no revelar
+        //    la existencia de la cuenta a quien no conoce las credenciales).
+        if (usuario.estado !== 'activo') {
+            return res.status(403).json({
+                ok: false,
+                mensaje: 'La cuenta está inactiva. Contacta a un administrador.'
+            });
+        }
         // 4.  Generar TOKEN
         const token = firmarAccessToken(usuario);
         const refreshToken = firmarRefreshToken(usuario);
@@ -66,9 +67,10 @@ const login = async (req, res) => {
         usuario.refreshToken = refreshToken;
         await usuario.save();
 
-        // 5.  Respuesta (sin exponer el hash de la contraseña)
+        // 5.  Respuesta (sin exponer el hash de la contraseña ni el refresh token almacenado)
         const usuarioSeguro = usuario.toObject();
         delete usuarioSeguro.password;
+        delete usuarioSeguro.refreshToken;
 
         res.json({
             ok: true,

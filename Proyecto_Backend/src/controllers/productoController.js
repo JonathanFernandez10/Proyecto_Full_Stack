@@ -3,6 +3,7 @@ const Producto = require('../models/Producto');
 const Inventario = require('../models/Inventario');
 const Movimiento = require('../models/Movimiento');
 const OrdenCompra = require('../models/OrdenCompra');
+const manejarError = require('../utils/manejarError');
 
 const POPULATE = [
     { path: 'categoria', select: 'nombre' },
@@ -40,13 +41,7 @@ const crearProducto = async (req, res) => {
         });
 
     } catch (error) {
-
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error creando producto',
-            error: error.message
-        });
-
+        manejarError(res, error, 'Error creando producto');
     } finally {
         session.endSession();
     }
@@ -68,12 +63,7 @@ const getProductos = async (req, res) => {
         });
 
     } catch (error) {
-
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
-
+        manejarError(res, error, 'Error obteniendo productos');
     }
 
 };
@@ -102,26 +92,31 @@ const getProductoById = async (req, res) => {
         });
 
     } catch (error) {
-
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
-
+        manejarError(res, error, 'Error obteniendo el producto');
     }
 
 };
 
 /*
-    Actualizar producto
+    Actualizar producto (solo campos permitidos del modelo)
 */
 const actualizarProducto = async (req, res) => {
 
     try {
 
+        const { nombre, codigo, descripcion, categoria, proveedor, precio, stock } = req.body;
+        const cambios = {};
+        if (nombre !== undefined) cambios.nombre = nombre;
+        if (codigo !== undefined) cambios.codigo = codigo;
+        if (descripcion !== undefined) cambios.descripcion = descripcion;
+        if (categoria !== undefined) cambios.categoria = categoria;
+        if (proveedor !== undefined) cambios.proveedor = proveedor;
+        if (precio !== undefined) cambios.precio = precio;
+        if (stock !== undefined) cambios.stock = stock;
+
         const producto = await Producto.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            cambios,
             {
                 new: true,
                 runValidators: true
@@ -143,13 +138,7 @@ const actualizarProducto = async (req, res) => {
         });
 
     } catch (error) {
-
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error actualizando producto',
-            error: error.message
-        });
-
+        manejarError(res, error, 'Error actualizando producto');
     }
 
 };
@@ -201,12 +190,7 @@ const eliminarProducto = async (req, res) => {
         });
 
     } catch (error) {
-
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
-
+        manejarError(res, error, 'Error eliminando el producto');
     } finally {
         session.endSession();
     }

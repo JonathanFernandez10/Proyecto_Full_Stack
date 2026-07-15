@@ -20,6 +20,7 @@ export class UsuariosComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     modalAbierto = false;
     editandoId: string | null = null;
@@ -85,6 +86,7 @@ export class UsuariosComponent implements OnInit {
         this.form.reset({ nombre: '', email: '', password: '', rol: 'user', estado: 'activo', proveedor: '' });
         this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
         this.form.get('password')?.updateValueAndValidity();
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -101,6 +103,7 @@ export class UsuariosComponent implements OnInit {
         });
         this.form.get('password')?.clearValidators();
         this.form.get('password')?.updateValueAndValidity();
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -111,12 +114,18 @@ export class UsuariosComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.errorModal = 'Completa los campos requeridos correctamente.';
             return;
         }
 
         const datos = { ...this.form.value };
         if (!datos.password) delete datos.password;
         if (datos.rol !== 'proveedor') datos.proveedor = null;
+
+        if (datos.rol === 'proveedor' && !datos.proveedor) {
+            this.errorModal = 'Selecciona el proveedor vinculado para el rol proveedor.';
+            return;
+        }
 
         const request = this.editandoId
             ? this.usuarioService.actualizarUsuario(this.editandoId, datos)
@@ -128,7 +137,7 @@ export class UsuariosComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || 'Error al guardar el usuario';
+                this.errorModal = err.error?.mensaje || 'Error al guardar el usuario';
             }
         });
     }

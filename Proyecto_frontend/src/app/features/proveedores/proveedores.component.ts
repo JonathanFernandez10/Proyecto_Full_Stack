@@ -18,6 +18,7 @@ export class ProveedoresComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     modalAbierto = false;
     editandoId: string | null = null;
@@ -74,6 +75,7 @@ export class ProveedoresComponent implements OnInit {
     abrirNuevo(): void {
         this.editandoId = null;
         this.form.reset({ nombre: '', contacto: '', telefono: '', correo: '', direccion: '' });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -86,6 +88,7 @@ export class ProveedoresComponent implements OnInit {
             correo: proveedor.correo,
             direccion: proveedor.direccion || ''
         });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -96,6 +99,7 @@ export class ProveedoresComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.errorModal = 'Completa los campos requeridos correctamente.';
             return;
         }
 
@@ -110,7 +114,7 @@ export class ProveedoresComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || 'Error al guardar el proveedor';
+                this.errorModal = err.error?.mensaje || 'Error al guardar el proveedor';
             }
         });
     }

@@ -62,9 +62,10 @@ const revertirMovimiento = async ({ producto, tipoMovimiento, cantidad }, sessio
     };
 
     if (tipoMovimiento === 'ajuste') {
-        // No hay un inverso genérico para un ajuste absoluto; se documenta la limitación
-        // y se deja el valor actual intacto - la reversión de "ajuste" se maneja explícitamente
-        // en el controlador re-calculando contra el valor previo guardado del movimiento.
+        // Un ajuste fija un valor absoluto y no tiene un inverso genérico seguro.
+        // Por eso el controlador de movimientos BLOQUEA editar/eliminar ajustes
+        // (la corrección se hace registrando un nuevo ajuste); esta rama solo
+        // existe como salvaguarda y no debería alcanzarse en la práctica.
         return;
     }
 

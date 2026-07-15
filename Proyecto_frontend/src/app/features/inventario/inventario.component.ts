@@ -17,6 +17,7 @@ export class InventarioComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     editando: Inventario | null = null;
     nuevaUbicacion = '';
@@ -70,6 +71,7 @@ export class InventarioComponent implements OnInit {
     }
 
     abrirEditar(item: Inventario): void {
+        this.errorModal = null;
         this.editando = item;
         this.nuevaUbicacion = item.ubicacion;
     }
@@ -86,7 +88,7 @@ export class InventarioComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || 'No se pudo actualizar la ubicación';
+                this.errorModal = err.error?.mensaje || 'No se pudo actualizar la ubicación';
             }
         });
     }

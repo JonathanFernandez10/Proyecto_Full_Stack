@@ -1,4 +1,5 @@
 const Inventario = require('../models/Inventario');
+const manejarError = require('../utils/manejarError');
 
 const POPULATE = { path: 'producto', select: 'nombre codigo precio stock' };
 
@@ -22,10 +23,7 @@ const getInventario = async (req, res) => {
             inventario
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo el inventario');
     }
 };
 
@@ -45,10 +43,7 @@ const getInventarioById = async (req, res) => {
             inventario: item
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo el registro de inventario');
     }
 };
 
@@ -79,11 +74,7 @@ const actualizarInventario = async (req, res) => {
             inventario: item
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error actualizando inventario',
-            error: error.message
-        });
+        manejarError(res, error, 'Error actualizando inventario');
     }
 };
 

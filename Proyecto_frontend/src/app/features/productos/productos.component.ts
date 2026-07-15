@@ -24,6 +24,7 @@ export class ProductosComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     modalAbierto = false;
     editandoId: string | null = null;
@@ -96,6 +97,7 @@ export class ProductosComponent implements OnInit {
     abrirNuevo(): void {
         this.editandoId = null;
         this.form.reset({ nombre: '', codigo: '', descripcion: '', categoria: '', proveedor: '', precio: 0, stock: 0, cantidadInicial: 0 });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -113,6 +115,7 @@ export class ProductosComponent implements OnInit {
             stock: producto.stock,
             cantidadInicial: 0
         });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -123,6 +126,7 @@ export class ProductosComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.errorModal = 'Completa los campos requeridos correctamente.';
             return;
         }
 
@@ -141,7 +145,7 @@ export class ProductosComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || 'Error al guardar el producto';
+                this.errorModal = err.error?.mensaje || 'Error al guardar el producto';
             }
         });
     }

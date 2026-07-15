@@ -24,6 +24,7 @@ export class OrdenesCompraComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     modalAbierto = false;
     porEliminar: OrdenCompra | null = null;
@@ -96,6 +97,7 @@ export class OrdenesCompraComponent implements OnInit {
 
     abrirNuevo(): void {
         this.form.reset({ proveedor: '', producto: '', cantidad: 1 });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -106,6 +108,7 @@ export class OrdenesCompraComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.errorModal = 'Completa los campos requeridos correctamente.';
             return;
         }
 
@@ -115,7 +118,7 @@ export class OrdenesCompraComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || 'Error al crear la orden de compra';
+                this.errorModal = err.error?.mensaje || 'Error al crear la orden de compra';
             }
         });
     }
