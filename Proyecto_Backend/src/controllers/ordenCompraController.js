@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const OrdenCompra = require('../models/OrdenCompra');
 const Movimiento = require('../models/Movimiento');
 const { aplicarMovimiento } = require('../services/inventarioService');
+const manejarError = require('../utils/manejarError');
 
 const POPULATE = [
     { path: 'proveedor', select: 'nombre correo telefono' },
@@ -10,7 +11,22 @@ const POPULATE = [
 
 const crearOrdenCompra = async (req, res) => {
     try {
-        const orden = new OrdenCompra(req.body);
+        // Campos permitidos explícitamente. El estado inicial solo puede ser
+        // 'pendiente' o 'aprobada': una orden nunca nace 'recibida' (eso saltaría
+        // el movimiento de entrada automático) ni 'cancelada'.
+        const { proveedor, producto, cantidad, fecha, estado } = req.body;
+
+        const estadosIniciales = ['pendiente', 'aprobada'];
+        const estadoInicial = estado === undefined ? 'pendiente' : estado;
+
+        if (!estadosIniciales.includes(estadoInicial)) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Una orden de compra solo puede crearse en estado pendiente o aprobada'
+            });
+        }
+
+        const orden = new OrdenCompra({ proveedor, producto, cantidad, fecha, estado: estadoInicial });
         const ordenGuardada = await orden.save();
         await ordenGuardada.populate(POPULATE);
 
@@ -19,11 +35,7 @@ const crearOrdenCompra = async (req, res) => {
             orden: ordenGuardada
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error creando orden de compra',
-            error: error.message
-        });
+        manejarError(res, error, 'Error creando orden de compra');
     }
 };
 
@@ -40,10 +52,7 @@ const getOrdenesCompra = async (req, res) => {
             ordenes
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo órdenes de compra');
     }
 };
 
@@ -70,17 +79,15 @@ const getOrdenCompraById = async (req, res) => {
             orden
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo la orden de compra');
     }
 };
 
 /*
     Actualizar una orden de compra. Si el estado cambia a 'recibida', se genera automáticamente
     un Movimiento de tipo 'entrada' por la cantidad de la orden, que a su vez actualiza el
-    Inventario del producto. Es idempotente: no se puede volver a "recibir" una orden ya recibida.
+    Inventario del producto. 'recibida' es un estado TERMINAL: una orden ya recibida no puede
+    modificarse (su efecto sobre el inventario ya quedó registrado y no debe revertirse).
 */
 const actualizarOrdenCompra = async (req, res) => {
     const session = await mongoose.startSession();
@@ -95,35 +102,50 @@ const actualizarOrdenCompra = async (req, res) => {
             });
         }
 
-        const pasaARecibida = req.body.estado === 'recibida' && ordenActual.estado !== 'recibida';
-
-        if (req.body.estado === 'recibida' && ordenActual.estado === 'recibida') {
+        // Estado terminal: bloquea tanto re-recibir como cualquier otra edición.
+        if (ordenActual.estado === 'recibida') {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Esta orden ya fue marcada como recibida'
+                mensaje: 'Una orden ya recibida no puede modificarse'
             });
         }
+
+        // Solo campos permitidos (sin dejar pasar el body completo).
+        const { proveedor, producto, cantidad, fecha, estado } = req.body;
+        const cambios = {};
+        if (proveedor !== undefined) cambios.proveedor = proveedor;
+        if (producto !== undefined) cambios.producto = producto;
+        if (cantidad !== undefined) cambios.cantidad = cantidad;
+        if (fecha !== undefined) cambios.fecha = fecha;
+        if (estado !== undefined) cambios.estado = estado;
+
+        const pasaARecibida = estado === 'recibida';
+
+        // Si la recepción llega junto con un cambio de cantidad/producto en la misma
+        // petición, el movimiento debe reflejar los valores finales de la orden.
+        const productoFinal = cambios.producto !== undefined ? cambios.producto : ordenActual.producto;
+        const cantidadFinal = cambios.cantidad !== undefined ? cambios.cantidad : ordenActual.cantidad;
 
         let ordenActualizada;
 
         await session.withTransaction(async () => {
             if (pasaARecibida) {
                 await aplicarMovimiento({
-                    producto: ordenActual.producto,
+                    producto: productoFinal,
                     tipoMovimiento: 'entrada',
-                    cantidad: ordenActual.cantidad
+                    cantidad: cantidadFinal
                 }, session);
 
                 await Movimiento.create([{
-                    producto: ordenActual.producto,
+                    producto: productoFinal,
                     tipoMovimiento: 'entrada',
-                    cantidad: ordenActual.cantidad,
+                    cantidad: cantidadFinal,
                     usuario: req.usuario.uid,
                     notas: `Generado automáticamente al recibir la orden de compra ${ordenActual._id}`
                 }], { session });
             }
 
-            ordenActual.set(req.body);
+            ordenActual.set(cambios);
             ordenActualizada = await ordenActual.save({ session });
         });
 
@@ -134,11 +156,7 @@ const actualizarOrdenCompra = async (req, res) => {
             orden: ordenActualizada
         });
     } catch (error) {
-        res.status(error.status || 400).json({
-            ok: false,
-            mensaje: 'Error actualizando orden de compra',
-            error: error.message
-        });
+        manejarError(res, error, 'Error actualizando orden de compra');
     } finally {
         session.endSession();
     }
@@ -169,10 +187,7 @@ const eliminarOrdenCompra = async (req, res) => {
             mensaje: 'Orden de compra eliminada'
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error eliminando la orden de compra');
     }
 };
 

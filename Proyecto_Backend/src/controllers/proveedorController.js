@@ -1,6 +1,8 @@
 const Proveedor = require('../models/Proveedor');
 const Producto = require('../models/Producto');
 const OrdenCompra = require('../models/OrdenCompra');
+const Usuario = require('../models/Usuario');
+const manejarError = require('../utils/manejarError');
 
 const crearProveedor = async (req, res) => {
     try {
@@ -12,11 +14,7 @@ const crearProveedor = async (req, res) => {
             proveedor: proveedorGuardado
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error creando proveedor',
-            error: error.message
-        });
+        manejarError(res, error, 'Error creando proveedor');
     }
 };
 
@@ -28,10 +26,7 @@ const getProveedores = async (req, res) => {
             proveedores
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo proveedores');
     }
 };
 
@@ -49,10 +44,7 @@ const getProveedorById = async (req, res) => {
             proveedor
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo el proveedor');
     }
 };
 
@@ -76,25 +68,29 @@ const actualizarProveedor = async (req, res) => {
             proveedor
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error actualizando proveedor',
-            error: error.message
-        });
+        manejarError(res, error, 'Error actualizando proveedor');
     }
 };
 
 const eliminarProveedor = async (req, res) => {
     try {
-        const [productoEnUso, ordenEnUso] = await Promise.all([
+        const [productoEnUso, ordenEnUso, usuarioVinculado] = await Promise.all([
             Producto.exists({ proveedor: req.params.id }),
-            OrdenCompra.exists({ proveedor: req.params.id })
+            OrdenCompra.exists({ proveedor: req.params.id }),
+            Usuario.exists({ proveedor: req.params.id })
         ]);
 
         if (productoEnUso || ordenEnUso) {
             return res.status(409).json({
                 ok: false,
                 mensaje: 'No se puede eliminar: hay productos u órdenes de compra asociadas a este proveedor'
+            });
+        }
+
+        if (usuarioVinculado) {
+            return res.status(409).json({
+                ok: false,
+                mensaje: 'No se puede eliminar: hay un usuario del sistema vinculado a este proveedor'
             });
         }
 
@@ -112,10 +108,7 @@ const eliminarProveedor = async (req, res) => {
             mensaje: 'Proveedor eliminado'
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error eliminando el proveedor');
     }
 };
 

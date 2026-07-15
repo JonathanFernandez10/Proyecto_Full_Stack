@@ -14,7 +14,8 @@ import {
   switchMap
 } from 'rxjs';
 
-const esRutaDeAuth = (url: string) => url.includes('/auth/login') || url.includes('/auth/refresh-token');
+const esRutaDeAuth = (url: string) =>
+  url.includes('/auth/login') || url.includes('/auth/refresh-token') || url.includes('/auth/logout');
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 

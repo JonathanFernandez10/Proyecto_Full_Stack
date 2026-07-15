@@ -2,6 +2,7 @@ const Producto = require('../models/Producto');
 const Proveedor = require('../models/Proveedor');
 const Inventario = require('../models/Inventario');
 const OrdenCompra = require('../models/OrdenCompra');
+const manejarError = require('../utils/manejarError');
 
 const getResumen = async (req, res) => {
     try {
@@ -31,10 +32,7 @@ const getResumen = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo el resumen del dashboard');
     }
 };
 

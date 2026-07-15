@@ -20,6 +20,7 @@ export class MovimientosComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     modalAbierto = false;
     porEliminar: Movimiento | null = null;
@@ -80,6 +81,7 @@ export class MovimientosComponent implements OnInit {
 
     abrirNuevo(): void {
         this.form.reset({ producto: '', tipoMovimiento: 'entrada', cantidad: 1, notas: '' });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -90,6 +92,7 @@ export class MovimientosComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.errorModal = 'Completa los campos requeridos correctamente.';
             return;
         }
 
@@ -99,7 +102,7 @@ export class MovimientosComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || err.error?.error || 'Error al registrar el movimiento';
+                this.errorModal = err.error?.mensaje || err.error?.error || 'Error al registrar el movimiento';
             }
         });
     }

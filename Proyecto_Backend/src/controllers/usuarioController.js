@@ -1,5 +1,6 @@
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
+const manejarError = require('../utils/manejarError');
 
 // Crear nuevo usuario
 const crearUsuario = async (req, res) => {
@@ -29,6 +30,7 @@ const crearUsuario = async (req, res) => {
     const usuarioGuardado = await nuevoUsuario.save();
     const usuarioSeguro = usuarioGuardado.toObject();
     delete usuarioSeguro.password;
+    delete usuarioSeguro.refreshToken;
 
     res.status(201).json({
       ok: true,
@@ -36,13 +38,7 @@ const crearUsuario = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      mensaje: 'Error al crear usuario',
-      error: error.message
-    });
+    manejarError(res, error, 'Error al crear usuario');
   }
 };
 
@@ -52,18 +48,14 @@ const crearUsuario = async (req, res) => {
 const getUsers = async (req, res) => {
     try {
         const users = await Usuario.find()
-            .select('-password')
+            .select('-password -refreshToken')
             .populate('proveedor', 'nombre');
         res.status(200).json({
             ok: true,
             usuarios: users
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: 'Error obteniendo usuarios',
-            error: error.message
-        });
+        manejarError(res, error, 'Error obteniendo usuarios');
     }
 };
 
@@ -73,7 +65,7 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
     try {
         const user = await Usuario.findById(req.params.id)
-            .select('-password')
+            .select('-password -refreshToken')
             .populate('proveedor', 'nombre');
         if (!user) {
             return res.status(404).json({
@@ -86,11 +78,7 @@ const getUserById = async (req, res) => {
             usuario: user
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: 'Error obteniendo usuario',
-            error: error.message
-        });
+        manejarError(res, error, 'Error obteniendo usuario');
     }
 };
 
@@ -101,7 +89,22 @@ const actualizarUsuario = async (req, res) => {
     try {
         const { nombre, email, password, rol, estado, proveedor } = req.body;
 
-        const cambios = { nombre, email, rol, estado, proveedor: rol === 'proveedor' ? proveedor : null };
+        // Solo se actualizan los campos presentes en la petición; el vínculo
+        // con proveedor únicamente se toca cuando la petición incluye el rol.
+        const cambios = {};
+        if (nombre !== undefined) cambios.nombre = nombre;
+        if (email !== undefined) cambios.email = email;
+        if (estado !== undefined) cambios.estado = estado;
+        if (rol !== undefined) {
+            if (rol === 'proveedor' && !proveedor) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Un usuario con rol proveedor debe estar vinculado a un proveedor'
+                });
+            }
+            cambios.rol = rol;
+            cambios.proveedor = rol === 'proveedor' ? proveedor : null;
+        }
 
         if (password) {
             const salt = bcrypt.genSaltSync(10);
@@ -112,7 +115,7 @@ const actualizarUsuario = async (req, res) => {
             req.params.id,
             cambios,
             { new: true, runValidators: true }
-        ).select('-password');
+        ).select('-password -refreshToken');
 
         if (!usuario) {
             return res.status(404).json({
@@ -126,11 +129,7 @@ const actualizarUsuario = async (req, res) => {
             usuario
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error actualizando usuario',
-            error: error.message
-        });
+        manejarError(res, error, 'Error actualizando usuario');
     }
 };
 
@@ -153,11 +152,7 @@ const eliminarUsuario = async (req, res) => {
             mensaje: 'Usuario eliminado'
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: 'Error eliminando usuario',
-            error: error.message
-        });
+        manejarError(res, error, 'Error eliminando usuario');
     }
 };
 

@@ -18,6 +18,7 @@ export class CategoriasComponent implements OnInit {
     busqueda = '';
     cargando = false;
     error: string | null = null;
+    errorModal: string | null = null;
 
     modalAbierto = false;
     editandoId: string | null = null;
@@ -70,12 +71,14 @@ export class CategoriasComponent implements OnInit {
     abrirNuevo(): void {
         this.editandoId = null;
         this.form.reset({ nombre: '', descripcion: '' });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
     abrirEditar(categoria: Categoria): void {
         this.editandoId = categoria._id ?? null;
         this.form.setValue({ nombre: categoria.nombre, descripcion: categoria.descripcion || '' });
+        this.errorModal = null;
         this.modalAbierto = true;
     }
 
@@ -86,6 +89,7 @@ export class CategoriasComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.errorModal = 'Completa los campos requeridos correctamente.';
             return;
         }
 
@@ -100,7 +104,7 @@ export class CategoriasComponent implements OnInit {
                 this.cargar();
             },
             error: (err) => {
-                this.error = err.error?.mensaje || 'Error al guardar la categoría';
+                this.errorModal = err.error?.mensaje || 'Error al guardar la categoría';
             }
         });
     }

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Movimiento = require('../models/Movimiento');
 const { aplicarMovimiento, revertirMovimiento } = require('../services/inventarioService');
+const manejarError = require('../utils/manejarError');
 
 const POPULATE = [
     { path: 'producto', select: 'nombre codigo' },
@@ -36,11 +37,7 @@ const crearMovimiento = async (req, res) => {
             movimiento: movimientoGuardado
         });
     } catch (error) {
-        res.status(error.status || 400).json({
-            ok: false,
-            mensaje: 'Error registrando movimiento',
-            error: error.message
-        });
+        manejarError(res, error, 'Error registrando movimiento');
     } finally {
         session.endSession();
     }
@@ -54,10 +51,7 @@ const getMovimientos = async (req, res) => {
             movimientos
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo movimientos');
     }
 };
 
@@ -75,10 +69,7 @@ const getMovimientoById = async (req, res) => {
             movimiento
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo el movimiento');
     }
 };
 
@@ -130,11 +121,7 @@ const actualizarMovimiento = async (req, res) => {
             movimiento: movimientoActualizado
         });
     } catch (error) {
-        res.status(error.status || 400).json({
-            ok: false,
-            mensaje: 'Error actualizando movimiento',
-            error: error.message
-        });
+        manejarError(res, error, 'Error actualizando movimiento');
     } finally {
         session.endSession();
     }
@@ -175,10 +162,7 @@ const eliminarMovimiento = async (req, res) => {
             mensaje: 'Movimiento eliminado y stock revertido'
         });
     } catch (error) {
-        res.status(error.status || 500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error eliminando el movimiento');
     } finally {
         session.endSession();
     }

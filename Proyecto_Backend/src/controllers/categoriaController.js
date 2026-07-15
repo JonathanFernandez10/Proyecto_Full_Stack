@@ -1,5 +1,6 @@
 const Categoria = require('../models/Categoria');
 const Producto = require('../models/Producto');
+const manejarError = require('../utils/manejarError');
 
 const crearCategoria = async (req, res) => {
     try {
@@ -11,11 +12,7 @@ const crearCategoria = async (req, res) => {
             categoria: categoriaGuardada
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error creando categoría',
-            error: error.message
-        });
+        manejarError(res, error, 'Error creando categoría');
     }
 };
 
@@ -27,10 +24,7 @@ const getCategorias = async (req, res) => {
             categorias
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo categorías');
     }
 };
 
@@ -48,10 +42,7 @@ const getCategoriaById = async (req, res) => {
             categoria
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error obteniendo la categoría');
     }
 };
 
@@ -75,11 +66,7 @@ const actualizarCategoria = async (req, res) => {
             categoria
         });
     } catch (error) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'Error actualizando categoría',
-            error: error.message
-        });
+        manejarError(res, error, 'Error actualizando categoría');
     }
 };
 
@@ -107,10 +94,7 @@ const eliminarCategoria = async (req, res) => {
             mensaje: 'Categoría eliminada'
         });
     } catch (error) {
-        res.status(500).json({
-            ok: false,
-            mensaje: error.message
-        });
+        manejarError(res, error, 'Error eliminando la categoría');
     }
 };
 
